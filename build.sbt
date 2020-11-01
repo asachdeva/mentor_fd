@@ -1,9 +1,23 @@
 import sbt._
+import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
+import com.scalapenos.sbt.prompt._
+
+val format = taskKey[Unit]("Format files using scalafmt and scalafix")
+
+promptTheme := PromptTheme(
+  List(
+    text(_ => "[functional-design]", fg(64)).padRight(" λ ")
+  )
+)
 
 lazy val functionalDesign = (project in file(".")).settings(
   name := "Functional Design",
   organization := "net.degoes",
   version := "0.1-SNAPSHOT",
+  format := {
+    Command.process("scalafmtAll", state.value)
+    Command.process("scalafmtSbt", state.value)
+  },
   scalaVersion := "2.13.3"
   // add other settings here
 )
