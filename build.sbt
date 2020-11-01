@@ -52,15 +52,6 @@ javacOptions ++= Seq(
   "1.7"
 )
 
-// javaOptions in Universal ++= Seq(
-//   "-J-server",
-//   "-J-Xms1g -Xmx4g",
-//   "-J-XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled",
-//   "-J-XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=68",
-//   "-J-XX:+ScavengeBeforeFullGC -XX:+CMSScavengeBeforeRemark",
-//   "-J-XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
-// )
-
 val CatsVersion = "2.2.0"
 val CatsEffectVersion = "2.2.0"
 val MonixVersion = "3.1.0"
