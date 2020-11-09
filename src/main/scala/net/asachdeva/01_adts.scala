@@ -1,6 +1,9 @@
 package net.asachdeva
 
 import java.time.Instant
+import java.util.Date
+
+import shapeless.Nat
 
 /*
  * INTRODUCTION
@@ -29,6 +32,7 @@ object credit_card {
     *  * Security code
     */
   type CreditCard
+  final case class Credit_Card[CreditCard](number: Long, name: String, expiratioDate: Date, securityCode:String)
 
   /** EXERCISE 2
     *
@@ -37,7 +41,20 @@ object credit_card {
     * or a digital product, such as a book or movie, or access to an event, such
     * as a music concert or film showing.
     */
-  type Product
+  sealed trait Product
+  sealed trait PhysicalProduct extends Product
+  sealed trait DigitalProduct extends Product
+  sealed trait Event extends Product
+
+  case object Milk extends PhysicalProduct
+  case object Book extends DigitalProduct
+  case object Movie extends DigitalProduct
+  case object Concert extends Event
+
+  /// this actually looks like I'm doing straight up polymorphism
+
+
+//  type Product
 
   /** EXERCISE 3
     *
@@ -45,7 +62,14 @@ object credit_card {
     * of a product price, which could be one-time purchase fee, or a recurring
     * fee on some regular interval.
     */
-  type PricingScheme
+//  type PricingScheme
+
+  sealed trait PricingScheme
+
+  case class OneTimePayment() extends PricingScheme
+
+  case class RecurringFee(interval: Option[String]) extends PricingScheme
+
 }
 
 /** EVENT PROCESSING - EXERCISE SET 3
@@ -60,8 +84,12 @@ object events {
     * Refactor the object-oriented data model in this section to a more
     * functional one, which uses only sealed traits and case classes.
     */
-  abstract class Event(val id: Int) {
-
+//  abstract class Event(val id: Int) {
+//
+//    def time: Instant
+//  }
+  sealed trait Event {
+    val id: Int
     def time: Instant
   }
 
@@ -77,31 +105,30 @@ object events {
     def deviceId: Int
   }
 
-  class SensorUpdated(
+  case class SensorUpdated(
       id: Int,
-      val deviceId: Int,
-      val time: Instant,
-      val reading: Option[Double]
-  ) extends Event(id)
+      deviceId: Int,
+      time: Instant,
+      reading: Option[Double]
+  ) extends Event
       with DeviceEvent
 
-  class DeviceActivated(id: Int, val deviceId: Int, val time: Instant)
-      extends Event(id)
+  case class DeviceActivated(id: Int, deviceId: Int, time: Instant)
+      extends Event
       with DeviceEvent
 
-  class UserPurchase(
+  case class UserPurchase(
       id: Int,
-      val item: String,
-      val price: Double,
-      val time: Instant,
-      val userName: String
-  ) extends Event(id)
+      item: String,
+      price: Double,
+      time: Instant,
+      userName: String
+  ) extends Event
       with UserEvent
 
-  class UserAccountCreated(id: Int, val userName: String, val time: Instant)
-      extends Event(id)
+  case class UserAccountCreated(id: Int, userName: String, time: Instant)
+      extends Event
       with UserEvent
-
 }
 
 /** DOCUMENT EDITING - EXERCISE SET 4
@@ -120,6 +147,9 @@ object documents {
     * realistic model of a Document.
     */
   type Document
+  final case class DocumentList(userId: UserId, docId: DocId, content: DocContent) {
+
+  }
 
   /** EXERCISE 2
     *
@@ -128,6 +158,13 @@ object documents {
     * some users might have read-only permission on a document.
     */
   type AccessType
+  type ReadAcess
+  sealed trait Access_Type[AccessType] {
+    def docId: DocId
+    def userId: UserId
+  }
+  final case class ReadAccess[ReadAccess](docId: DocId, userId: UserId) extends Access_Type[AccessType]
+  final case class WriteAccess(docId:DocId, userId: UserId, content: DocContent) extends Access_Type[AccessType]
 
   /** EXERCISE 3
     *
@@ -136,6 +173,9 @@ object documents {
     * Do not store the document contents themselves in this model.
     */
   type DocPermissions
+  sealed trait Permissions[DocPermissions]{
+    def givePermission
+  }
 }
 
 /** BANKING - EXERCISE SET 5
@@ -180,6 +220,10 @@ object portfolio {
     * exchange. Ensure there exist values for NASDAQ and NYSE.
     */
   type Exchange
+  sealed trait StockExchange[Exchange]{
+    def exchangeName(e: Exchange): Exchange
+  }
+  final case class NYSE[Exchange](e: Exchange) extends StockExchange[Exchange]
 
   /** EXERCISE 2
     *
@@ -187,6 +231,7 @@ object portfolio {
     * type.
     */
   type CurrencyType
+  sealed trait Currency[CurrencyType]
 
   /** EXERCISE 3
     *
