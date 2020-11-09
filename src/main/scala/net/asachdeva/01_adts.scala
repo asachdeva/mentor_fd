@@ -2,9 +2,6 @@ package net.asachdeva
 
 import java.time.Instant
 import java.util.Date
-
-import shapeless.Nat
-
 /*
  * INTRODUCTION
  *
@@ -221,10 +218,14 @@ object portfolio {
     */
   type Exchange
   sealed trait StockExchange[Exchange]{
-    def exchangeName(e: Exchange): Exchange
+    def exchangeName(e: Exchange): String
   }
-  final case class NYSE[Exchange](e: Exchange) extends StockExchange[Exchange]
+  final case class NYSE[Exchange](e: Exchange) extends StockExchange[Exchange]{
+    def exchangeName(e: Exchange): String = "NYSE"
+  }
 
+  // should NYSE be another class or a param inside the StockExchange trait
+  
   /** EXERCISE 2
     *
     * Using only sealed traits and case classes, develop a model of a currency
