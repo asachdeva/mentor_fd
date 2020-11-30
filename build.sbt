@@ -2,7 +2,7 @@ import sbt._
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 import com.scalapenos.sbt.prompt._
 
-val format = taskKey[Unit]("Format files using scalafmt and scalafix")
+val format = taskKey[Unit]("Format files using scalafm")
 
 promptTheme := PromptTheme(
   List(
@@ -18,12 +18,12 @@ lazy val functionalDesign = (project in file(".")).settings(
     Command.process("scalafmtAll", state.value)
     Command.process("scalafmtSbt", state.value)
   },
-  scalaVersion := "2.13.3"
+  scalaVersion := "2.13.4"
   // add other settings here
 )
 
 /* scala versions and options */
-scalaVersion := "2.12.10"
+scalaVersion := "2.12.12"
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6")
 
@@ -52,19 +52,19 @@ javacOptions ++= Seq(
   "1.7"
 )
 
-val CatsVersion = "2.2.0"
-val CatsEffectVersion = "2.2.0"
+val CatsVersion = "2.3.0"
+val CatsEffectVersion = "2.3.0"
 val MonixVersion = "3.1.0"
 val ZIOVersion = "1.0.2"
 val ShapelessVersion = "2.3.3"
-val FS2Version = "2.4.0"
+val FS2Version = "2.4.6"
 val AmmoniteVersion = "2.0.0"
 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.1",
   // -- testing --
   "org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+  "org.scalatest" %% "scalatest" % "3.2.3" % "test",
   // -- Logging --
   "ch.qos.logback" % "logback-classic" % "1.1.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
