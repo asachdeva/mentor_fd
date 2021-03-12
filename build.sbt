@@ -12,13 +12,12 @@ promptTheme := PromptTheme(
 
 lazy val functionalDesign = (project in file(".")).settings(
   name := "Functional Design",
-  organization := "net.degoes",
   version := "0.1-SNAPSHOT",
   format := {
     Command.process("scalafmtAll", state.value)
     Command.process("scalafmtSbt", state.value)
   },
-  scalaVersion := "2.13.4"
+  scalaVersion := "2.13.5"
   // add other settings here
 )
 
