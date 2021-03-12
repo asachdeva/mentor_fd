@@ -22,6 +22,6 @@ In this course, developers will learn how to write simple functional solutions t
 * Using types to enforce business constraints
 * Generalized algebraic data types for advanced modeling
 * Principle of least power applied to functional design
-* Design techniques used in the ZIO library and broader ecosystem
+* Design techniques used in the ecosystem
 * Functional approaches to internal domain-specific languages
 * Translating between different domain-specific language
