@@ -1,5 +1,9 @@
 package net.asachdeva
 
+
+import java.io.BufferedInputStream
+import scala.concurrent.ExecutionContext
+
 /*
  * INTRODUCTION
  *
@@ -49,7 +53,12 @@ object input_stream {
       * try to create the first input stream, but if that fails by throwing
       * an exception, it will then try to create the second input stream.
       */
-    def orElse(that: => IStream): IStream = ???
+    def orElse(that: => IStream): IStream = 
+      try {
+        IStream(self.createInputStream)
+      } catch {
+        case e: Exception => IStream.empty
+      }
 
     /** EXERCISE 3
       *
@@ -57,7 +66,7 @@ object input_stream {
       * create the input stream, but wrap it in Java's `BufferedInputStream`
       * before returning it.
       */
-    def buffered: IStream = ???
+    def buffered: IStream = IStream(() => new BufferedInputStream(self.createInputStream()))
   }
   object IStream {
 
@@ -105,21 +114,23 @@ object email_filter {
       * Add an "and" operator that will match an email if both the first and
       * the second email filter match the email.
       */
-    def &&(that: EmailFilter): EmailFilter = ???
+    def &&(that: EmailFilter): EmailFilter =
+      //EmailFilter((self.matches(_: Email) && that.matches(_: Email)))
+      EmailFilter(email => self.matches(email) && that.matches(email))
 
     /** EXERCISE 2
       *
       * Add an "or" operator that will match an email if either the first or
       * the second email filter match the email.
       */
-    def ||(that: EmailFilter): EmailFilter = ???
+    def ||(that: EmailFilter): EmailFilter = EmailFilter(email => self.matches(email) || that.matches(email))
 
     /** EXERCISE 3
       *
       * Add a "negate" operator that will match an email if this email filter
       * does NOT match an email.
       */
-    def unary_! : EmailFilter = ???
+    def unary_! : EmailFilter = EmailFilter(email => !self.matches(email))
   }
   object EmailFilter {
     def senderIs(address: Address): EmailFilter = EmailFilter(
@@ -146,9 +157,9 @@ object email_filter {
     * addressed to "john@doe.com". Build this filter up compositionally
     * by using the defined constructors and operators.
     */
-  lazy val emailFilter1 = ???
-}
+  lazy val emailFilter1: EmailFilter = EmailFilter.subjectContains("discount") && EmailFilter.bodyContains("N95") && EmailFilter.recipientIs(Address("jogn@doe.com")).unary_!
 
+}
 /** DATA TRANSFORM - EXERCISE SET 3
   *
   * Consider an email marketing platform, which allows users to upload contacts.
@@ -304,7 +315,7 @@ object contact_processing {
   final case class SchemaMapping(
       map: ContactsCSV => MappingResult[ContactsCSV]
   ) { self =>
-
+    import MappingResult.{Success, Failure}
     /** EXERCISE 1
       *
       * Add a `+` operator that combines two schema mappings into one, applying
@@ -313,7 +324,13 @@ object contact_processing {
       * then the result must also fail. Only if both schema mappings succeed
       * can the resulting schema mapping succeed.
       */
-    def +(that: SchemaMapping): SchemaMapping = ???
+    def +(that: SchemaMapping): SchemaMapping = SchemaMapping(contactCSV => self.map(contactCSV) match {
+      case Success(warnings1, first) => that.map(contactCSV) match {
+        case Success(warnings2, second) => Success(warnings1 + warnings2, first + second)
+        case Failure(errors) => Failure(errors)
+      }
+      case Failure(errors) => Failure(errors)
+    })
 
     /** EXERCISE 2
       *
@@ -321,14 +338,21 @@ object contact_processing {
       * applying the effects of the first one, unless it fails, and in that
       * case, applying the effects of the second one.
       */
-    def orElse(that: SchemaMapping): SchemaMapping = ???
+    def orElse(that: SchemaMapping): SchemaMapping = SchemaMapping(
+      contacts => self.map(contacts) match {
+        case Success(warnings, value) => Success(warnings, value)
+        case Failure(errors) => that.map(contacts) match {
+          case Success(warnings, value) => Success(warnings, value)
+          case Failure(errors) => Failure(errors)
+        }
+    })
 
     /** BONUS: EXERCISE 3
       *
       * Add an `protect` operator that returns a new schema mapping that
       * preserve the specified column names in the final result.
       */
-    def protect(columnNames: Set[String]): SchemaMapping = ???
+    def protect(columnNames: Set[String]): SchemaMapping = SchemaMapping(csv => copy(csv.schema.columnNames = columnNames))
   }
   object SchemaMapping {
 
@@ -336,7 +360,10 @@ object contact_processing {
       *
       * Add a constructor for `SchemaMapping` that renames a column.
       */
-    def rename(oldName: String, newName: String): SchemaMapping = ???
+    def rename(oldName: String, newName: String): SchemaMapping = SchemaMapping { csv =>
+      val csv2 = csv.rename(oldColumn = oldName, newColumn = newName)
+      MappingResult.Success(if (csv == csv2) List("Eror message") else Nil, csv2)
+    }
 
     /** EXERCISE 5
       *
@@ -344,21 +371,31 @@ object contact_processing {
       */
     def combine(leftColumn: String, rightColumn: String)(newName: String)(
         f: (String, String) => String
-    ): SchemaMapping = ???
+    ): SchemaMapping = SchemaMapping { csv =>
+      // combine returns
+      val csv2: Option[ContactsCSV] = csv.combine(leftColumn, rightColumn)(f(leftColumn, rightColumn))
+      MappingResult.Success(if (csv == csv2.get) List("Couldn't combine columns") else Nil, csv2.get)
+    }
 
     /** EXERCISE 6
       *
       * Add a constructor for `SchemaMapping` that moves the column of the
       * specified name to the jth position.
       */
-    def relocate(column: String, j: Int): SchemaMapping = ???
+    def relocate(column: String, j: Int): SchemaMapping = SchemaMapping { csv =>
+      val csv2: Option[ContactsCSV] = csv.relocate(column, j)
+      MappingResult.Success(if (csv == csv2.get) List("Couldn't relocate columns") else Nil, csv2.get)
+    }
 
     /** EXERCISE 7
       *
       * Add a constructor for `SchemaMapping` that deletes the column of the
       * specified name.
       */
-    def delete(name: String): SchemaMapping = ???
+    def delete(name: String): SchemaMapping = SchemaMapping { csv =>
+      val csv2 = csv.delete(name)
+      MappingResult.Success(if (csv == csv2) List("Couldn't relocate columns") else Nil, csv2)
+    }
   }
 
   /** EXERCISE 8
@@ -367,7 +404,7 @@ object contact_processing {
     * company's official schema for contacts, by composing schema mappings
     * constructed from constructors and operators.
     */
-  lazy val schemaMapping: SchemaMapping = ???
+  lazy val schemaMapping: SchemaMapping =
 
   val UserUploadSchema: SchemaCSV =
     SchemaCSV(List("email", "fname", "lname", "country", "street", "postal"))
@@ -423,7 +460,7 @@ object ui_events {
       * Add a method `+` that composes two listeners into a single listener,
       * by sending each game event to both listeners.
       */
-    def +(that: Listener): Listener = ???
+    def +(that: Listener): Listener = Listener(event => self.onEvent(event) + that.onEvent(event))
 
     /** EXERCISE 2
       *
@@ -431,21 +468,29 @@ object ui_events {
       * by sending each game event to either the left listener, if it does not
       * throw an exception, or the right listener, if the left throws an exception.
       */
-    def orElse(that: Listener): Listener = ???
+    def orElse(that: Listener): Listener = try {
+      Listener(self.onEvent + that.onEvent)
+    } catch{
+      case e: Exception => Listener(self.onEvent + that.onEvent)
+    }
 
     /** EXERCISE 3
       *
       * Add a `runOn` operator that returns a Listener that will call this one's
       * `onEvent` callback on the specified `ExecutionContext`.
       */
-    def runOn(ec: scala.concurrent.ExecutionContext): Listener = ???
+    def runOn(ec: scala.concurrent.ExecutionContext): Listener = Listener(event =>
+      ec.execute(() => self.onEvent(event)))
 
     /** EXERCISE 4
       *
       * Add a `debug` unary operator that will call the `onEvent` callback, but
       * before it does, it will print out the game event to the console.
       */
-    def debug: Listener = ???
+    def debug: Listener = Listener(event => {
+      println(event)
+      onEvent(event)
+    })
   }
 
   /** EXERCISE 5
@@ -454,7 +499,8 @@ object ui_events {
     * listeners in response to each game event, making the gfxUpdateListener
     * run on the `uiExecutionContext`, and debugging the input events.
     */
-  lazy val solution = ???
+  lazy val solution = gfxUpdateListener.runOn(uiExecutionContext).debug +
+    twinkleAnimationListener.debug + motionDetectionListener.debug
 
   lazy val twinkleAnimationListener: Listener = ???
   lazy val motionDetectionListener: Listener = ???
